@@ -1,0 +1,4 @@
+packages_install:
+  - yum-utils
+  - device-mapper-persistent-data
+  - lvm2

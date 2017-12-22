@@ -1,0 +1,5 @@
+packages_install:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - python-software-properties

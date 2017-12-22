@@ -1,0 +1,110 @@
+---
+
+- name: Remove old Docker Packages if are installed on Debian
+  apt:
+    update_cache: yes
+    state: absent
+    pkg: "{{ item }}"
+  with_items:
+    - docker
+    - docker-engine
+    - docker.io
+  when: (ansible_os_family == "Debian" and ansible_machine == "x86_64")
+
+
+- name: Remove old Docker Packages if are installed on CentOS
+  yum:
+    update_cache: yes
+    state: absent
+    pkg: "{{ item }}"
+  with_items:
+    - docker
+    - docker-common
+    - docker-selinux
+    - docker-engine
+  when: (ansible_distribution == "CentOS" and ansible_machine == "x86_64")
+
+
+- name: Load Vars
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "1-version-{{ ansible_distribution|lower }}_{{ ansible_distribution_major_version|lower }}.yml"
+    - "2-distribution-{{ ansible_distribution|lower }}-{{ ansible_architecture }}.yml"
+    - "3-distribution-{{ ansible_distribution|lower }}.yml"
+    - "4-family-{{ ansible_os_family|lower }}.yml"
+    - "5-default.yml"
+
+
+- name: Install latest Kernel for Debian Wheezy if under 3.10 version
+  apt:
+    update_cache: yes
+    name: linux-image-flavour
+    state: latest
+  when: (ansible_distribution_release == "wheezy" and ansible_kernel <= "3.10.0*" and release == "7.7" and ansible_machine == "x86_64")
+
+
+- name: Install Docker Dependencies for Debian OS Family
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "{{ packages_install|default([]) }}"
+  when: (ansible_architecture == "x86_64" and ansible_os_family|lower == "debian" and packages_install|length > 0)
+
+
+- name: Install Docker Dependencies for CentOS OS Family
+  yum:
+    update_cache: yes
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "{{ packages_install|default([]) }}"
+  when: (ansible_architecture == "x86_64" and ansible_os_family|lower == "centos" and packages_install|length > 0)
+
+
+- name: Add apt-key for Debian
+  apt_key:
+    id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
+    url: "https://download.docker.com/linux/debian/gpg"
+    state: present
+  when: (ansible_distribution == "Debian" and ansible_machine == "x86_64")
+
+
+- name: Add apt-key for Ubuntu
+  apt_key:
+    id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+  when: (ansible_distribution == "Ubuntu" and ansible_machine == "x86_64")
+
+
+- name: Add apt-repo for Debian x86_64
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+    state: present
+  when: (ansible_distribution|lower == "debian" and ansible_machine == "x86_64")
+
+
+- name: Add apt-repo for Ubuntu x86_64
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+  when: (ansible_distribution|lower == "ubuntu" and ansible_machine == "x86_64")
+
+
+- name: Add yum-repo for CentOS x86_64
+  yum_repository:
+    name: docker-ce.repo
+    description: Docker-CE Yum REPO
+    gpgcheck: no
+    baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+  when: (ansible_distribution|lower == "centos" and ansible_machine == "x86_64")
+
+
+- name: Install Docker-ce
+  apt:
+    update_cache: yes
+    name: docker-ce
+    state: latest
+
