@@ -9,7 +9,7 @@
     - docker
     - docker-engine
     - docker.io
-  when: (ansible_os_family == "Debian" and ansible_machine == "x86_64")
+  when: (ansible_os_family|lower == "debian" and ansible_machine == "x86_64")
 
 
 - name: Remove old Docker Packages if are installed on CentOS
@@ -22,7 +22,7 @@
     - docker-common
     - docker-selinux
     - docker-engine
-  when: (ansible_distribution == "CentOS" and ansible_machine == "x86_64")
+  when: (ansible_distribution| == "centos" and ansible_machine == "x86_64")
 
 
 - name: Load Vars
@@ -60,7 +60,7 @@
     state: latest
   with_items:
     - "{{ packages_install|default([]) }}"
-  when: (ansible_architecture == "x86_64" and ansible_os_family|lower == "centos" and packages_install|length > 0)
+  when: (ansible_architecture == "x86_64" and ansible_os_family|lower == "redhat" and packages_install|length > 0)
 
 
 - name: Add apt-key for Debian
@@ -68,7 +68,7 @@
     id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
     url: "https://download.docker.com/linux/debian/gpg"
     state: present
-  when: (ansible_distribution == "Debian" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "debian" and ansible_machine == "x86_64")
 
 
 - name: Add apt-key for Ubuntu
@@ -76,7 +76,7 @@
     id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
     url: "https://download.docker.com/linux/ubuntu/gpg"
     state: present
-  when: (ansible_distribution == "Ubuntu" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "ubuntu" and ansible_machine == "x86_64")
 
 
 - name: Add apt-repo for Debian x86_64
@@ -102,9 +102,19 @@
   when: (ansible_distribution|lower == "centos" and ansible_machine == "x86_64")
 
 
-- name: Install Docker-ce
+- name: Install Docker-ce for Debian OS Family
   apt:
     update_cache: yes
     name: docker-ce
     state: latest
+  when: (ansible_os_family|lower == "debian" and ansible_machine == "x86_64")
 
+- name: Install Docker-ce for RHEL OS Family
+  yum:
+    update_cache: yes
+    name: docker-ce
+    state: present
+  when: (ansible_os_family|lower == "redhat" and ansible_machine == "x86_64")
+
+- name: Install Docker-compose
+  shell: "curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose"
