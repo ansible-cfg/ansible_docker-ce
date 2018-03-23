@@ -9,7 +9,7 @@
     - docker
     - docker-engine
     - docker.io
-  when: (ansible_os_family|lower == "debian" and ansible_machine == "x86_64")
+  when: ansible_os_family|lower == "debian"
 
 
 - name: Remove old Docker Packages if are installed on CentOS
@@ -22,7 +22,7 @@
     - docker-common
     - docker-selinux
     - docker-engine
-  when: (ansible_distribution| == "centos" and ansible_machine == "x86_64")
+  when: ansible_distribution|lower == "centos"
 
 
 - name: Load Vars
@@ -68,7 +68,7 @@
     id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
     url: "https://download.docker.com/linux/debian/gpg"
     state: present
-  when: (ansible_distribution|lower == "debian" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "debian" and ansible_architecture == "x86_64")
 
 
 - name: Add apt-key for Ubuntu
@@ -76,21 +76,21 @@
     id: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
     url: "https://download.docker.com/linux/ubuntu/gpg"
     state: present
-  when: (ansible_distribution|lower == "ubuntu" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "ubuntu" and ansible_architecture == "x86_64")
 
 
 - name: Add apt-repo for Debian x86_64
   apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
     state: present
-  when: (ansible_distribution|lower == "debian" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "debian" and ansible_architecture == "x86_64")
 
 
 - name: Add apt-repo for Ubuntu x86_64
   apt_repository:
     repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
-  when: (ansible_distribution|lower == "ubuntu" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "ubuntu" and ansible_architecture == "x86_64")
 
 
 - name: Add yum-repo for CentOS x86_64
@@ -99,22 +99,36 @@
     description: Docker-CE Yum REPO
     gpgcheck: no
     baseurl: https://download.docker.com/linux/centos/docker-ce.repo
-  when: (ansible_distribution|lower == "centos" and ansible_machine == "x86_64")
+  when: (ansible_distribution|lower == "centos" and ansible_architecture == "x86_64")
 
 
-- name: Install Docker-ce for Debian OS Family
+- name: Install Docker-ce for Debian OS Family x86_64
   apt:
     update_cache: yes
     name: docker-ce
     state: latest
-  when: (ansible_os_family|lower == "debian" and ansible_machine == "x86_64")
+  when: (ansible_os_family|lower == "debian" and ansible_architecture == "x86_64")
 
-- name: Install Docker-ce for RHEL OS Family
+- name: Install Docker-ce for RHEL OS Family x86_64
   yum:
     update_cache: yes
     name: docker-ce
     state: present
-  when: (ansible_os_family|lower == "redhat" and ansible_machine == "x86_64")
+  when: (ansible_os_family|lower == "redhat" and ansible_architecture == "x86_64")
 
-- name: Install Docker-compose
+- name: Get docker conveniance script for Raspian ARM
+  get_url:
+    url: https://get.docker.com
+    dest: /root/get.docker.sh
+    mode: 0755
+    owner: root
+    group: root
+  when: (ansible_distribution|lower == "debian" and ansible_architecture == "armv7l")
+
+- name: Install docker-ce with conveniance script
+  shell: /root/./get.docker.sh
+  when: (ansible_distribution|lower == "debian" and ansible_architecture == "armv7l")
+
+- name: Install Docker-compose for x86_64
   shell: "curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose"
+  when: ansible_architecture == "x86_64"
